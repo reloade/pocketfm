@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Audio Player</title>
+    <style>
+        @import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css');
+        
+        * { box-sizing: border-box; outline: 0; margin: 0; padding: 0; }
+        
+        body, html {
+            height: 100%; width: 100%; 
+            background: #020617; /* थोड़ा गहरा बैकग्राउंड */
+            font-family: "Segoe UI", sans-serif;
+            display: flex;
+            justify-content: center; /* डेस्कटॉप पर बीच में रखने के लिए */
+        }
+
+        /* मुख्य कंटेनर: डेस्कटॉप पर 500px चौड़ा और मोबाइल पर 100% */
+        #simp {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 500px; /* डेस्कटॉप पर चिपकेगा नहीं */
+            background: #0f172a;
+            color: #f8fafc;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        /* Home Button Style */
+        .home-nav {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            z-index: 20;
+        }
+        .home-btn {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .home-btn:hover { background: #3b82f6; }
+
+        /* Top Player Section */
+        .Top_Player {
+            padding: 25px 20px 15px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+            flex-shrink: 0;
+        }
+
+        .info_area { display: flex; align-items: center; margin-bottom: 20px; }
+        .simp-cover img {
+            width: 85px; height: 85px; border-radius: 15px;
+            border: 2px solid #3b82f6; object-fit: cover;
+        }
+        .simp-info { margin-left: 15px; padding-right: 40px; }
+        .simp-title { font-size: 18px; font-weight: 700; color: #3b82f6; }
+        .simp-artist { font-size: 13px; color: #94a3b8; }
+
+        .simp-time-wrapper {
+            display: flex; justify-content: space-between;
+            font-size: 12px; color: #94a3b8; margin-bottom: 8px;
+            font-family: monospace;
+        }
+        #progress { width: 100%; cursor: pointer; accent-color: #3b82f6; height: 6px; margin-bottom: 15px; }
+
+        .control_row { display: flex; justify-content: space-between; align-items: center; }
+        .main-btns { display: flex; align-items: center; gap: 25px; }
+        button { background: none; border: 0; color: #cbd5e1; cursor: pointer; transition: 0.2s; }
+        .simp-plause { font-size: 45px; color: #3b82f6; }
+        
+        .vol-box { display: flex; align-items: center; gap: 8px; }
+        #volume { accent-color: #3b82f6; width: 70px; cursor: pointer; }
+        
+        .simp-speed-btn {
+            font-weight: bold; font-size: 13px; color: #3b82f6;
+            border: 1.5px solid #3b82f6; border-radius: 6px; padding: 4px 10px;
+        }
+
+        /* Playlist Section */
+        .Audio-playlist {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: #0f172a;
+        }
+        .playlist-header {
+            padding: 15px 20px; font-size: 12px; color: #64748b;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        #simp ul li {
+            padding: 16px 20px; cursor: pointer;
+            border-bottom: 1px solid #1e293b; display: flex; align-items: center;
+        }
+        #simp ul li.simp-active {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 5px solid #3b82f6; color: #3b82f6;
+        }
+
+        /* Scrollbar Customization */
+        .Audio-playlist::-webkit-scrollbar { width: 4px; }
+        .Audio-playlist::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+</head>
+<body>
+
+<div id="simp">
+  <div class="home-nav">
+      <a href="https://reloade.github.io/pocketfm/" class="home-btn" title="Home">
+          <i class="fa fa-home"></i>
+      </a>
+  </div>
+
+  <div class="Top_Player">
+      <div class="info_area">
+          <div class="simp-cover"><img src="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp" id="player-cover"></div>
+          <div class="simp-info">
+              <div class="simp-title" id="player-title">Episode Loading...</div>
+              <div class="simp-artist">अभी चल रहा है</div>
+          </div>
+      </div>
+
+      <div class="simp-time-wrapper">
+          <span id="current-time">00:00</span>
+          <span id="total-duration">00:00</span>
+      </div>
+      <input type="range" id="progress" value="0" min="0" max="100">
+
+      <div class="control_row">
+          <div class="vol-box">
+              <i class="fa fa-volume-up" style="color:#94a3b8; font-size: 12px;"></i>
+              <input type="range" id="volume" value="100" min="0" max="100">
+          </div>
+
+          <div class="main-btns">
+              <button class="fa fa-backward" id="prev" style="font-size: 20px;"></button>
+              <button class="fa fa-play simp-plause" id="play-pause"></button>
+              <button class="fa fa-forward" id="next" style="font-size: 20px;"></button>
+          </div>
+
+          <button class="simp-speed-btn" id="speed-btn">1x</button>
+      </div>
+  </div>
+
+  <div class="Audio-playlist">
+    <div class="playlist-header">प्लेलिस्ट (10 एपिसोड्स)</div>
+    <ul id="playlist-ul">
+      <li class="simp-active"><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/1.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 1</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/2.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 2</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/3.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 3</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/4.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 4</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/5.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 5</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/6.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 6</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/7.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 7</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/8.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 8</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/9.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 9</span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/p1/resolve/main/10.mp3" data-cover="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp">🎧 Episode → 10</span></li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// ... (वही JavaScript लॉजिक जो पहले अच्छे से काम कर रहा था)
+document.addEventListener('DOMContentLoaded', function() {
+    const audio = new Audio();
+    const playlist = document.querySelectorAll('#playlist-ul li');
+    const playBtn = document.getElementById('play-pause');
+    const speedBtn = document.getElementById('speed-btn');
+    const progressBar = document.getElementById('progress');
+    const volumeBar = document.getElementById('volume');
+    const curTimeText = document.getElementById('current-time');
+    const totalDurationText = document.getElementById('total-duration');
+    
+    let currentTrack = 0;
+    let playbackSpeed = 1.0;
+
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return "00:00";
+        let m = Math.floor(seconds / 60);
+        let s = Math.floor(seconds % 60);
+        return `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+
+    function loadTrack(index) {
+        const source = playlist[index].querySelector('.Audio_source');
+        audio.src = source.dataset.src;
+        document.getElementById('player-cover').src = source.dataset.cover;
+        document.getElementById('player-title').innerText = source.innerText;
+        playlist.forEach(li => li.classList.remove('simp-active'));
+        playlist[index].classList.add('simp-active');
+        audio.playbackRate = playbackSpeed;
+    }
+
+    audio.addEventListener('loadedmetadata', () => { totalDurationText.innerText = formatTime(audio.duration); });
+
+    playBtn.addEventListener('click', () => {
+        if (audio.paused) { audio.play(); playBtn.classList.replace('fa-play', 'fa-pause'); }
+        else { audio.pause(); playBtn.classList.replace('fa-pause', 'fa-play'); }
+    });
+
+    speedBtn.addEventListener('click', () => {
+        const speeds = [1.0, 1.25, 1.5, 2.0];
+        playbackSpeed = speeds[(speeds.indexOf(playbackSpeed) + 1) % speeds.length];
+        audio.playbackRate = playbackSpeed;
+        speedBtn.innerText = playbackSpeed + 'x';
+    });
+
+    volumeBar.addEventListener('input', () => audio.volume = volumeBar.value / 100);
+
+    audio.addEventListener('timeupdate', () => {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progressBar.value = percent || 0;
+        curTimeText.innerText = formatTime(audio.currentTime);
+    });
+
+    progressBar.addEventListener('input', () => audio.currentTime = (progressBar.value / 100) * audio.duration);
+
+    playlist.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            currentTrack = index;
+            loadTrack(currentTrack);
+            audio.play();
+            playBtn.classList.replace('fa-play', 'fa-pause');
+        });
+    });
+
+    document.getElementById('next').addEventListener('click', () => {
+        currentTrack = (currentTrack + 1) % playlist.length;
+        loadTrack(currentTrack);
+        audio.play();
+        playBtn.classList.replace('fa-play', 'fa-pause');
+    });
+
+    document.getElementById('prev').addEventListener('click', () => {
+        currentTrack = (currentTrack - 1 + playlist.length) % playlist.length;
+        loadTrack(currentTrack);
+        audio.play();
+        playBtn.classList.replace('fa-play', 'fa-pause');
+    });
+
+    audio.addEventListener('ended', () => {
+        currentTrack = (currentTrack + 1) % playlist.length;
+        loadTrack(currentTrack);
+        audio.play();
+    });
+
+    loadTrack(0);
+});
+</script>
+</body>
+</html>
