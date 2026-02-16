@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Audio Player</title>
+    <style>
+        @import url('https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css');
+        
+        * { box-sizing: border-box; outline: 0; margin: 0; padding: 0; }
+        
+        body, html {
+            height: 100%; width: 100%; 
+            background: #020617; /* थोड़ा गहरा बैकग्राउंड */
+            font-family: "Segoe UI", sans-serif;
+            display: flex;
+            justify-content: center; /* डेस्कटॉप पर बीच में रखने के लिए */
+        }
+
+        /* मुख्य कंटेनर: डेस्कटॉप पर 500px चौड़ा और मोबाइल पर 100% */
+        #simp {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+            max-width: 500px; /* डेस्कटॉप पर चिपकेगा नहीं */
+            background: #0f172a;
+            color: #f8fafc;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            position: relative;
+        }
+
+        /* Home Button Style */
+        .home-nav {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            z-index: 20;
+        }
+        .home-btn {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .home-btn:hover { background: #3b82f6; }
+
+        /* Top Player Section */
+        .Top_Player {
+            padding: 25px 20px 15px;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border-bottom: 1px solid #334155;
+            flex-shrink: 0;
+        }
+
+        .info_area { display: flex; align-items: center; margin-bottom: 20px; }
+        .simp-cover img {
+            width: 85px; height: 85px; border-radius: 15px;
+            border: 2px solid #3b82f6; object-fit: cover;
+        }
+        .simp-info { margin-left: 15px; padding-right: 40px; }
+        .simp-title { font-size: 18px; font-weight: 700; color: #3b82f6; }
+        .simp-artist { font-size: 13px; color: #94a3b8; }
+
+        .simp-time-wrapper {
+            display: flex; justify-content: space-between;
+            font-size: 12px; color: #94a3b8; margin-bottom: 8px;
+            font-family: monospace;
+        }
+        #progress { width: 100%; cursor: pointer; accent-color: #3b82f6; height: 6px; margin-bottom: 15px; }
+
+        .control_row { display: flex; justify-content: space-between; align-items: center; }
+        .main-btns { display: flex; align-items: center; gap: 25px; }
+        button { background: none; border: 0; color: #cbd5e1; cursor: pointer; transition: 0.2s; }
+        .simp-plause { font-size: 45px; color: #3b82f6; }
+        
+        .vol-box { display: flex; align-items: center; gap: 8px; }
+        #volume { accent-color: #3b82f6; width: 70px; cursor: pointer; }
+        
+        .simp-speed-btn {
+            font-weight: bold; font-size: 13px; color: #3b82f6;
+            border: 1.5px solid #3b82f6; border-radius: 6px; padding: 4px 10px;
+        }
+
+        /* Playlist Section */
+        .Audio-playlist {
+            flex-grow: 1;
+            overflow-y: auto;
+            background: #0f172a;
+        }
+        .playlist-header {
+            padding: 15px 20px; font-size: 12px; color: #64748b;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        #simp ul li {
+            padding: 16px 20px; cursor: pointer;
+            border-bottom: 1px solid #1e293b; display: flex; align-items: center;
+        }
+        #simp ul li.simp-active {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 5px solid #3b82f6; color: #3b82f6;
+        }
+
+        /* Scrollbar Customization */
+        .Audio-playlist::-webkit-scrollbar { width: 4px; }
+        .Audio-playlist::-webkit-scrollbar-thumb { background: #334155; }
+    </style>
+</head>
+<body>
+
+<div id="simp">
+  <div class="home-nav">
+      <a href="https://reloade.github.io/pocketfm/" class="home-btn" title="Home">
+          <i class="fa fa-home"></i>
+      </a>
+  </div>
+
+  <div class="Top_Player">
+      <div class="info_area">
+          <div class="simp-cover"><img src="https://pocket-fm.odoo.com/web/image/279-1188a6d6/y1001.webp" id="player-cover"></div>
+          <div class="simp-info">
+              <div class="simp-title" id="player-title">Episode Loading...</div>
+              <div class="simp-artist">Rudhali</div>
+          </div>
+      </div>
+
+      <div class="simp-time-wrapper">
+          <span id="current-time">00:00</span>
+          <span id="total-duration">00:00</span>
+      </div>
+      <input type="range" id="progress" value="0" min="0" max="100">
+
+      <div class="control_row">
+          <div class="vol-box">
+              <i class="fa fa-volume-up" style="color:#94a3b8; font-size: 12px;"></i>
+              <input type="range" id="volume" value="100" min="0" max="100">
+          </div>
+
+          <div class="main-btns">
+              <button class="fa fa-backward" id="prev" style="font-size: 20px;"></button>
+              <button class="fa fa-play simp-plause" id="play-pause"></button>
+              <button class="fa fa-forward" id="next" style="font-size: 20px;"></button>
+          </div>
+
+          <button class="simp-speed-btn" id="speed-btn">1x</button>
+      </div>
+  </div>
+
+  <div class="Audio-playlist">
+    <div class="playlist-header">Episodes 205 Ending</div>
+    <ul id="playlist-ul">
+      <li class="simp-active"><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/1.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 1</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/2.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 2</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/3.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 3</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/4.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 4</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/5.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 5</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/6.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 6</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/7.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 7</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/8.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 8</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/9.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 9</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/10.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 10</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/11.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 11</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/12.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 12</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/13.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 13</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/14.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 14</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/15.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 15</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/16.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 16</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/17.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 17</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/18.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 18</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/19.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 19</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/20.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 20</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/21.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 21</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/22.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 22</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/23.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 23</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/24.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 24</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/25.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 25</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/26.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 26</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/27.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 27</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/28.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 28</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/29.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 29</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/30.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 30</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/31.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 31</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/32.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 32</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/33.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 33</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/34.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 34</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/35.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 35</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/36.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 36</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/37.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 37</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/38.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 38</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/39.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 39</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/40.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 40</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/41.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 41</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/42.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 42</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/43.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 43</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/44.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 44</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/45.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 45</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/46.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 46</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/47.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 47</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/48.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 48</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/49.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 49</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/50.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 50</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/51.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 51</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/52.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 52</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/53.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 53</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/54.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 54</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/55.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 55</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/56.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 56</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/57.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 57</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/58.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 58</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/59.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 59</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/60.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 60</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/61.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 61</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/62.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 62</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/63.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 63</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/64.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 64</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/65.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 65</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/66.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 66</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/67.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 67</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/68.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 68</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/69.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 69</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/70.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 70</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/71.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 71</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/72.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 72</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/73.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 73</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/74.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 74</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/75.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 75</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/76.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 76</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/77.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 77</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/78.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 78</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/79.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 79</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/80.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 80</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/81.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 81</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/82.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 82</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/83.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 83</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/84.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 84</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/85.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 85</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/86.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 86</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/87.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 87</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/88.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 88</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/89.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 89</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/90.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 90</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/91.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 91</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/92.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 92</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/93.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 93</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/94.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 94</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/95.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 95</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/96.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 96</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/97.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 97</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/98.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 98</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/99.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 99</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/100.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 100</span><span class="Audio_description"></span></li>
+      
+      
+      
+      
+      
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/101.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 101</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/102.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 102</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/103.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 103</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/104.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 104</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/105.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 105</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/106.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 106</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/107.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 107</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/108.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 108</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/109.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 109</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/110.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 110</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/111.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 111</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/112.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 112</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/113.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 113</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/114.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 114</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/115.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 115</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/116.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 116</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/117.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 117</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/118.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 118</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/119.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 119</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/120.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 120</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/121.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 121</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/122.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 122</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/123.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 123</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/124.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 124</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/125.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 125</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/126.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 126</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/127.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 127</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/128.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 128</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/129.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 129</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/130.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 130</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/131.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 131</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/132.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 132</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/133.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 133</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/134.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 134</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/135.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 135</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/136.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 136</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/137.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 137</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/138.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 138</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/139.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 139</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/140.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 140</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/141.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 141</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/142.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 142</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/143.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 143</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/144.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 144</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/145.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 145</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/146.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 146</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/147.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 147</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/148.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 148</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/149.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 149</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/150.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 150</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/151.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 151</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/152.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 152</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/153.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 153</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/154.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 154</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/155.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 155</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/156.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 156</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/157.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 157</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/158.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 158</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/159.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 159</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/160.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 160</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/161.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 161</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/162.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 162</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/163.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 163</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/164.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 164</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/165.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 165</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/166.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 166</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/167.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 167</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/168.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 168</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/169.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 169</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/170.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 170</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/171.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 171</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/172.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 172</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/173.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 173</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/174.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 174</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/175.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 175</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/176.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 176</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/177.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 177</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/178.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 178</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/179.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 179</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/180.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 180</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/181.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 181</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/182.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 182</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/183.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 183</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/184.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 184</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/185.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 185</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/186.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 186</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/187.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 187</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/188.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 188</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/189.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 189</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/190.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 190</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/191.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 191</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/192.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 192</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/193.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 193</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/194.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 194</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/195.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 195</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/196.m4a" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 196</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/197.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 197</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/198.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 198</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/199.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 199</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/200.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 200</span><span class="Audio_description"></span></li>
+      
+      
+      
+      
+      
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/201.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 201</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/202.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 202</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/203.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 203</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/204.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 204</span><span class="Audio_description"></span></li>
+      <li><span class="Audio_source" data-src="https://huggingface.co/datasets/420dramatv/r205/resolve/main/205.mp3" data-cover="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s">🎧 𝙀𝙥𝙞𝙨𝙤𝙙𝙚 → 205</span><span class="Audio_description"></span></li>
+      
+
+    </ul>
+  </div>
+</div>
+
+<script>
+// ... (वही JavaScript लॉजिक जो पहले अच्छे से काम कर रहा था)
+document.addEventListener('DOMContentLoaded', function() {
+    const audio = new Audio();
+    const playlist = document.querySelectorAll('#playlist-ul li');
+    const playBtn = document.getElementById('play-pause');
+    const speedBtn = document.getElementById('speed-btn');
+    const progressBar = document.getElementById('progress');
+    const volumeBar = document.getElementById('volume');
+    const curTimeText = document.getElementById('current-time');
+    const totalDurationText = document.getElementById('total-duration');
+    
+    let currentTrack = 0;
+    let playbackSpeed = 1.0;
+
+    function formatTime(seconds) {
+        if (isNaN(seconds)) return "00:00";
+        let m = Math.floor(seconds / 60);
+        let s = Math.floor(seconds % 60);
+        return `${m < 10 ? '0'+m : m}:${s < 10 ? '0'+s : s}`;
+    }
+
+    function loadTrack(index) {
+        const source = playlist[index].querySelector('.Audio_source');
+        audio.src = source.dataset.src;
+        document.getElementById('player-cover').src = source.dataset.cover;
+        document.getElementById('player-title').innerText = source.innerText;
+        playlist.forEach(li => li.classList.remove('simp-active'));
+        playlist[index].classList.add('simp-active');
+        audio.playbackRate = playbackSpeed;
+    }
+
+    audio.addEventListener('loadedmetadata', () => { totalDurationText.innerText = formatTime(audio.duration); });
+
+    playBtn.addEventListener('click', () => {
+        if (audio.paused) { audio.play(); playBtn.classList.replace('fa-play', 'fa-pause'); }
+        else { audio.pause(); playBtn.classList.replace('fa-pause', 'fa-play'); }
+    });
+
+    speedBtn.addEventListener('click', () => {
+        const speeds = [1.0, 1.25, 1.5, 2.0];
+        playbackSpeed = speeds[(speeds.indexOf(playbackSpeed) + 1) % speeds.length];
+        audio.playbackRate = playbackSpeed;
+        speedBtn.innerText = playbackSpeed + 'x';
+    });
+
+    volumeBar.addEventListener('input', () => audio.volume = volumeBar.value / 100);
+
+    audio.addEventListener('timeupdate', () => {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progressBar.value = percent || 0;
+        curTimeText.innerText = formatTime(audio.currentTime);
+    });
+
+    progressBar.addEventListener('input', () => audio.currentTime = (progressBar.value / 100) * audio.duration);
+
+    playlist.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            currentTrack = index;
+            loadTrack(currentTrack);
+            audio.play();
+            playBtn.classList.replace('fa-play', 'fa-pause');
+        });
+    });
+
+    document.getElementById('next').addEventListener('click', () => {
+        currentTrack = (currentTrack + 1) % playlist.length;
+        loadTrack(currentTrack);
+        audio.play();
+        playBtn.classList.replace('fa-play', 'fa-pause');
+    });
+
+    document.getElementById('prev').addEventListener('click', () => {
+        currentTrack = (currentTrack - 1 + playlist.length) % playlist.length;
+        loadTrack(currentTrack);
+        audio.play();
+        playBtn.classList.replace('fa-play', 'fa-pause');
+    });
+
+    audio.addEventListener('ended', () => {
+        currentTrack = (currentTrack + 1) % playlist.length;
+        loadTrack(currentTrack);
+        audio.play();
+    });
+
+    loadTrack(0);
+});
+</script>
+</body>
+</html>
