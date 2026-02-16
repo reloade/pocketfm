@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Story Grid</title>
+    <style>
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: #0f172a;
+            font-family: "Segoe UI", sans-serif;
+            color: #f8fafc;
+            padding: 20px 10px;
+        }
+
+        .container {
+            max-width: 1200px; /* डेस्कटॉप पर ग्रिड की चौड़ाई को कंट्रोल करेगा */
+            margin: 0 auto;    /* डेस्कटॉप पर ग्रिड को बीच में रखेगा */
+        }
+
+        .header-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 24px;
+            color: #3b82f6;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        /* --- मुख्य ग्रिड लॉजिक --- */
+        .story-grid {
+            display: grid;
+            gap: 12px; /* कार्ड्स के बीच की दूरी */
+            width: 100%;
+        }
+
+        /* मोबाइल के लिए (Default): एक लाइन में 2 कार्ड */
+        @media (max-width: 600px) {
+            .story-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px; /* मोबाइल पर थोड़ा कम गैप */
+            }
+        }
+
+        /* टैबलेट के लिए: एक लाइन में 3 कार्ड */
+        @media (min-width: 601px) and (max-width: 900px) {
+            .story-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* डेस्कटॉप के लिए: एक लाइन में 5 कार्ड */
+        @media (min-width: 901px) {
+            .story-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 20px; /* डेस्कटॉप पर थोड़ा ज्यादा गैप अच्छा लगता है */
+            }
+        }
+
+        /* कार्ड स्टाइल */
+        .story-card {
+            text-decoration: none;
+            color: inherit;
+            background: #1e293b;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .story-card:hover {
+            transform: translateY(-5px);
+            border-color: #3b82f6;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+        }
+
+        /* इमेज को चौकोर रखने के लिए */
+        .image-box {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+        }
+
+        .image-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* टाइटल स्टाइल */
+        .story-info {
+            padding: 12px 8px;
+            text-align: center;
+        }
+
+        .story-title {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.3;
+            color: #f1f5f9;
+            /* 2 लाइन के बाद ... लग जाएगा */
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="header-title">Superhit Stories</h>
+
+    <div class="story-grid">
+        
+        <a href="https://reloade.github.io/pocketfm/secret_ameerzada" class="story-card">
+            <div class="image-box">
+                <img src="https://m.media-amazon.com/images/M/MV5BNTg2ODIwODUtMTNhMy00Y2M5LTljZmMtYmY3MjA2MmQwMDMxXkEyXkFqcGc@._V1_.jpg" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Secret Ameerzada</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/yakshini" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbPG4ufl0mrKVEeHCJb6F7N-uFUhhJnFjS9g&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Yakshini</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/insta_millenear" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSI-68UJsr_MTf4pu9emi-tL0RZvuO7Fvu70A&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Insta Millenear</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/banda_yeh_badass_hai" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/shows/media_108f52cebdb9a9f5ab95276bd8539546de72ce86.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Banda Yeh Badass Hai</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/bhay_nagar" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/show_assets/media_31f166041d1dfc781c8cbbc62ecca92ec6f1694c.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Bhay Nagar</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/darling_i_am_back" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/shows/media_2791c0717a7edb5c67c21bc3ed7fd9ae2706ea24.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Darling I Am Back</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/ek_ladki_ko_dekha_to" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/shows/media_74bbfa0e674948a98732de0b9f5bb9412dd3e127.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">EK LADKI KO DEKHA TO</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/hidden_mafia" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_d4df8c93aacfbd7bf0d11bb0413756d610bb4a00.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Hidden Mafia</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/hotel_raj_mahal" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_b3e5b03f734848d998ed46770adbb9b2b59718aa.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">HOTEL RAJ MAHAL</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/kabristan_wali_chudail" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEzdrVk5vfQVkRUzFGl1InSMeua3Pw-CgIhA&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Kabristan Wali Chudail</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/khauff" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRydBEP7tVbO6SrKgWWCgx8sQ10vx5W9haiyQ&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Khauff</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/khooni_vadhu" class="story-card">
+            <div class="image-box">
+                <img src="https://djhonz7dexnot.cloudfront.net/48dfbabd88d88f40169faca233536e46e006a15a.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">KHOONI VADHU</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/mandolika" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTV4Ha8le2US-dbUrODw6jc0vc4piZc_8lnOQ&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Mandolika</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/megh_ek_shraap" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/show_assets/media_e96d4d272103f21b45f86ab2bce53b1a2081560e.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">MEGH EK SHRAAP</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/millionaire_gharjamai" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_a8d8b2843f540ca0caceaaafb92a49e52123b1c0.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Millionaire Gharjamai</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/narakdoot" class="story-card">
+            <div class="image-box">
+                <img src="https://djhonz7dexnot.cloudfront.net/d6d05d7f8d3a2ae746312b9d5a4412df6d6828a4.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">NARAKDOOT</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/pyaas" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_6bdeb85287e2888d6b3eba686527c586de216590.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">PYAAS</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/rudhali" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-oxon4dCsiu9aq2QMM0zmPxqtL8zaKf3cvA&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Rudhali</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/school_of_magic" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_9eccbf9583a008d43413e7864d1e46361f100b56.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">SCHOOL OF MAGIC</div>
+            </div>
+        </a>
+         <a href="https://reloade.github.io/pocketfm/secret_fauji" class="story-card">
+            <div class="image-box">
+                <img src="https://djhonz7dexnot.cloudfront.net/dbb04d259b023e80b03bcc97725963e903ae2123.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Secret Fauji</div>
+            </div>
+        </a>
+         <a href="https://reloade.github.io/pocketfm/shivam_the_hidden_warrior" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQjCQnJfNWyNvut-iCn3HRVot4_E5GkmKIDg&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Shivam The Hidden Warrior</div>
+            </div>
+        </a>
+         <a href="https://reloade.github.io/pocketfm/the_leader" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_a798ce7d014312f39a51c5ccd70b985723cfc72f.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">The Leader</div>
+            </div>
+        </a>
+         <a href="https://reloade.github.io/pocketfm/vashikaran" class="story-card">
+            <div class="image-box">
+                <img src="https://djhonz7dexnot.cloudfront.net/ae8f2f0baeaf6336f2d81a04031b8578f3a4da5c.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Vashikaran</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/veeraan_gadh" class="story-card">
+            <div class="image-box">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ67zrmg3Jyfedq2dZQGDgB9PN7PPhe5nRV_A&s" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">VEERAAN GADH</div>
+            </div>
+        </a>
+        
+        
+        
+         <a href="https://reloade.github.io/pocketfm/unraveling_the_son_in_law" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_7f93d8e0581796b360dc7784ba965b1098e8d079.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Unraveling the Son in Law</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/insta_empire_english" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/images/media_f594a195f18cc039d4c48a3c8a9c94e7f3472d0b.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">Insta Empire English</div>
+            </div>
+        </a>
+        <a href="https://reloade.github.io/pocketfm/insta_millionaire_english" class="story-card">
+            <div class="image-box">
+                <img src="https://d2wxtuh5s9v3ty.cloudfront.net/shows/media_0a7346886849f8ef83c165c09f1fa90aedd4dcef.webp" alt="Story">
+            </div>
+            <div class="story-info">
+                <div class="story-title">INSTA MILLIONAIRE ENGLISH</div>
+            </div>
+        </a>
+        
+        </div>
+</div>
+
+</body>
+</html>
